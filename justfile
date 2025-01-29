@@ -7,8 +7,12 @@ default:
 install-python:
     uv sync
 
+# Install deployment tools for Scalingo
+install-deployment-scalingo:
+    cp deployment/scalingo/git-hooks/* .git/hooks/
+
 # Install everything needed
-install: install-python
+install: install-python install-deployment-scalingo
 
 # Django base command
 manage command:

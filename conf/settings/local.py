@@ -20,3 +20,5 @@ MIDDLEWARE.extend(
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
+
+LOGGING = {}

@@ -15,3 +15,7 @@ dev = [
   "django-debug-toolbar",
   "ruff",
 ]
+scalingo = [
+  "gunicorn ~=23.0",
+  "whitenoise ~=6.8",
+]
