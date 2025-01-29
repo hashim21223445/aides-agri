@@ -1,5 +1,7 @@
 # Plateforme aides-agri
 
+Based on Django and [the French Administration Design System](https://www.systeme-de-design.gouv.fr/).
+
 ## Pre-requisites
 
 You need those pretty standard tools on your system:

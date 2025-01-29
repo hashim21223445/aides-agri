@@ -4,6 +4,7 @@ name = "aides-agri"
 version = "0.1.0"
 dependencies = [
   "django ~=5.1",
+  "django-dsfr ~=2.1",
   "psycopg[binary] ~=3.0",
 ]
 
