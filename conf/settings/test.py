@@ -6,4 +6,6 @@ INTERNAL_IPS = [
 
 LOGGING = {}
 
-STORAGES["staticfiles"]["BACKEND"] = "django.contrib.staticfiles.storage.StaticFilesStorage"
+STORAGES["staticfiles"]["BACKEND"] = (
+    "django.contrib.staticfiles.storage.StaticFilesStorage"
+)

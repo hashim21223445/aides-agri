@@ -11,5 +11,7 @@ MIDDLEWARE.insert(
     MIDDLEWARE.index("django.middleware.security.SecurityMiddleware") + 1,
     "whitenoise.middleware.WhiteNoiseMiddleware",
 )
-STORAGES["staticfiles"]["BACKEND"] = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STORAGES["staticfiles"]["BACKEND"] = (
+    "whitenoise.storage.CompressedManifestStaticFilesStorage"
+)
 WHITENOISE_ROOT = BASE_DIR / "webroot"
