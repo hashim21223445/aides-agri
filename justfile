@@ -23,3 +23,7 @@ runserver: (manage "runserver")
 makemigrations: (manage "makemigrations")
 migrate: (manage "migrate")
 shell: (manage "shell")
+
+# Testing
+test:
+    DJANGO_SETTINGS_MODULE=conf.settings.test uv run pytest

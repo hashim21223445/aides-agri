@@ -14,6 +14,8 @@ dev = [
   "django-browser-reload",
   "django-debug-toolbar",
   "ruff",
+  "pytest",
+  "pytest-django",
 ]
 scalingo = [
   "gunicorn ~=23.0",
