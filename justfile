@@ -26,4 +26,4 @@ shell: (manage "shell")
 
 # Testing
 test:
-    DJANGO_SETTINGS_MODULE=conf.settings.test uv run pytest
+    DJANGO_SETTINGS_MODULE=conf.settings.testing uv run pytest
