@@ -12,3 +12,4 @@ MIDDLEWARE.insert(
     "whitenoise.middleware.WhiteNoiseMiddleware",
 )
 STORAGES["staticfiles"]["BACKEND"] = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+WHITENOISE_ROOT = BASE_DIR / "webroot"
