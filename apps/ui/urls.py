@@ -4,5 +4,5 @@ from django.views.generic import TemplateView
 
 app_label = "ui"
 urlpatterns = [
-    path("", TemplateView.as_view(template_name="ui/base.html")),
+    path("", TemplateView.as_view(template_name="ui/base.html"), name="home"),
 ]
