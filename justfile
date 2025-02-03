@@ -7,12 +7,16 @@ default:
 install-python:
     uv sync
 
+# Install Talisman as pre-push hook
+install-talisman:
+    curl -s 'https://thoughtworks.github.io/talisman/install.sh' | bash
+
 # Install deployment tools for Scalingo
 install-deployment-scalingo:
     cp deployment/scalingo/git-hooks/* .git/hooks/
 
 # Install everything needed
-install: install-python install-deployment-scalingo
+install: install-python install-talisman install-deployment-scalingo
 
 # Django base command
 manage command:
