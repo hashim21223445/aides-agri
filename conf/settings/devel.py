@@ -3,14 +3,14 @@ from .default import *  # noqa
 
 DEBUG = True
 
-INSTALLED_APPS.extend(
+INSTALLED_APPS.extend(  # noqa: F405
     [
         "django_browser_reload",
         "debug_toolbar",
     ]
 )
 
-MIDDLEWARE.extend(
+MIDDLEWARE.extend(  # noqa: F405
     [
         "debug_toolbar.middleware.DebugToolbarMiddleware",
         "django_browser_reload.middleware.BrowserReloadMiddleware",

@@ -1,4 +1,4 @@
-from .default import *
+from .default import *  # noqa
 
 
 # Security hardenings
@@ -7,11 +7,11 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
 # Whitenoise for static files
-MIDDLEWARE.insert(
-    MIDDLEWARE.index("django.middleware.security.SecurityMiddleware") + 1,
+MIDDLEWARE.insert(  # noqa: F405
+    MIDDLEWARE.index("django.middleware.security.SecurityMiddleware") + 1,  # noqa: F405
     "whitenoise.middleware.WhiteNoiseMiddleware",
 )
-STORAGES["staticfiles"]["BACKEND"] = (
+STORAGES["staticfiles"]["BACKEND"] = (  # noqa: F405
     "whitenoise.storage.CompressedManifestStaticFilesStorage"
 )
-WHITENOISE_ROOT = BASE_DIR / "webroot"
+WHITENOISE_ROOT = BASE_DIR / "webroot"  # noqa: F405
