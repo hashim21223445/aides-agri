@@ -9,7 +9,8 @@ on:
       - main
 
 jobs:
-  test:
+  validate:
+    name: Validation (test + code style)
     runs-on: ubuntu-latest
 
     services:
@@ -33,6 +34,8 @@ jobs:
           python-version-file: "pyproject.toml"
       - name: Install dependencies
         run: uv sync --all-extras --dev
+      - name: Run Ruff
+        run: uv run ruff check --output-format=github .
       - name: Run tests
         run: uv run pytest
         env:
