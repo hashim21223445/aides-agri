@@ -24,9 +24,10 @@ manage command:
 
 # Django shorthands
 runserver: (manage "runserver")
-makemigrations: (manage "makemigrations")
 migrate: (manage "migrate")
 shell: (manage "shell")
+makemigrations: (manage "makemigrations")
+    ruff format apps/*/migrations/*.py
 
 # Testing
 test:
