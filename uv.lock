@@ -9,6 +9,7 @@ dependencies = [
     { name = "django" },
     { name = "django-dsfr" },
     { name = "psycopg", extra = ["binary"] },
+    { name = "requests" },
 ]
 
 [package.dev-dependencies]
@@ -30,6 +31,7 @@ requires-dist = [
     { name = "django", specifier = "~=5.1" },
     { name = "django-dsfr", specifier = "~=2.1" },
     { name = "psycopg", extras = ["binary"], specifier = "~=3.0" },
+    { name = "requests", specifier = "~=2.32" },
 ]
 
 [package.metadata.requires-dev]

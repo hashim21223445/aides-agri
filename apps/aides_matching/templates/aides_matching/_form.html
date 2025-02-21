@@ -1,0 +1,37 @@
+{% extends "aides_matching/_base.html" %}
+
+{% block main_col_content %}
+<form action="{% block action %}{% endblock action %}">
+
+  {# previous steps fields hidden #}
+  <input type="hidden" name="theme" value="{{ summary_theme }}">
+  {% for sujet in summary_sujets %}
+    <input type="hidden" name="sujets[]" value="{{ sujet }}">
+  {% endfor %}
+  {% if summary_siret %}
+    <input type="hidden" name="siret" value="{{ summary_siret }}">
+  {% endif %}
+  {% if summary_cp %}
+    <input type="hidden" name="cp" value="{{ summary_cp }}">
+  {% endif %}
+  {% for naf in codes_naf %}
+    <input type="hidden" name="naf[]" value="{{ naf }}">
+  {% endfor %}
+  {% if code_effectif %}
+    <input type="hidden" name="tranche_effectif_salarie" value="{{ code_effectif }}">
+  {% endif %}
+
+  <section class="fr-container fr-p-0 fr-mb-4w">
+    {% block form %}{% endblock form %}
+  </section>
+
+  {# action buttons #}
+  <section class="fr-container fr-p-0">
+    <div class="fr-grid-row fr-grid-row--space-between">
+      <button type="button" class="fr-btn fr-btn--secondary" onclick="history.back()">Retour</button>
+      <button type="submit" class="fr-btn" aria-label="Valider">→</button>
+    </div>
+  </section>
+
+</form>
+{% endblock main_col_content %}

@@ -1,0 +1,33 @@
+<ul class="fr-dropdown">
+{% for hit in hits %}
+  {% for etablissement in hit.matching_etablissements %}
+    <li class="fr-dropdown__item">
+      <button type="button" class="fr-dropdown__entry fr-btn fr-btn--tertiary-no-outline"
+              data-siret="{{ etablissement.siret }}"
+              onclick="document.getElementById('siret-search').value = this.dataset.siret; this.parentElement.parentElement.remove()"
+      >
+        <strong>{{ hit.nom_complet }}</strong>
+        <span>
+          SIRET&nbsp;{{ etablissement.siret }},
+          à {{ etablissement.libelle_commune }} ({{ etablissement.code_postal }})
+        </span>
+        <span class="fr-icon-briefcase-line">
+          {{ etablissement.activite_principale }}
+          {% if etablissement.libelle_activite_principale %}
+            : {{ etablissement.libelle_activite_principale }}
+          {% endif %}
+        </span>
+        {% if etablissement.nom_commercial %}
+          <span>{{ etablissement.nom_commercial }}</span>
+        {% elif etablissement.liste_enseignes %}
+          <span>{{ etablissement.liste_enseignes.0 }}</span>
+        {% endif %}
+      </button>
+    </li>
+  {% endfor %}
+{% endfor %}
+</ul>
+
+{% for error in errors %}
+  <p class="fr-error-text">{{ error }}</p>
+{% endfor %}

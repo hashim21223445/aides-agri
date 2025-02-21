@@ -1,0 +1,34 @@
+{% extends "dsfr/header.html" %}
+
+{% load i18n %}
+
+{% block header_tools %}
+<nav class="fr-header__tools-links">
+  <ul class="fr-btns-group">
+    <li>
+      <a href="/" class="fr-btn fr-btn--tertiary-no-outline fr-icon-briefcase-fill">
+        Mon projet
+      </a>
+    </li>
+    <li>
+      <a href="#" class="fr-btn fr-btn--tertiary-no-outline fr-icon-article-fill">
+        Catalogue d'aides
+      </a>
+    </li>
+  </ul>
+</nav>
+{% endblock %}
+
+{% block main_menu %}
+<div class="fr-header__menu fr-modal" id="fr-menu-mobile" aria-labelledby="fr-btn-menu-mobile">
+  <div class="fr-container">
+    <button class="fr-btn--close fr-btn" aria-controls="fr-menu-mobile">
+      {% translate "Close" %}
+    </button>
+    <div class="fr-header__menu-links">
+    </div>
+    {% translate "Main menu" as main_menu_label %}
+    <nav role="navigation"></nav>
+  </div>
+</div>
+{% endblock %}

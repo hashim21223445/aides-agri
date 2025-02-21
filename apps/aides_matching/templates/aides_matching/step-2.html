@@ -1,0 +1,22 @@
+{% extends "aides_matching/_form.html" %}
+
+{% load dsfr_tags static ui_tags %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'ui/components/tile_checkbox.css' %}">
+{% endblock extra_css %}
+
+{% block h2 %}Quels sont les sous-thèmes qui correspond à votre projet ?{% endblock %}
+
+{% block action %}{% url 'aides_matching:step-3' %}{% endblock action %}
+
+{% block form %}
+<div class="fr-grid-row fr-grid-row--gutters">
+  {% for option in options %}
+  <div class="fr-col">
+    {% ui_tile_checkbox id=option.id name=option.name value=option.value title="Lorem Ipsum" description="Description" extra_classes="fr-tile--horizontal fr-tile--sm" svg_path="/static/dsfr/dist/artwork/pictograms/buildings/city-hall.svg" %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock form %}
