@@ -1,0 +1,111 @@
+{% extends "ui/base.html" %}
+
+{% load dsfr_tags static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'aides_matching/base.css' %}">
+  <script type="importmap">
+  {
+    "imports": {
+      "@hotwired/stimulus": "{% static 'vendor/stimulus.js' %}",
+      "summary-mobile": "{% static 'aides_matching/summary-mobile.js' %}",
+      "suggest": "{% static 'ui/components/suggest.js' %}"
+    }
+  }
+  </script>
+  <script type="module">
+    import { Application } from "@hotwired/stimulus"
+    import { SummaryMobile } from "summary-mobile"
+    window.Stimulus ??= Application.start()
+
+    Stimulus.register("summary-mobile", SummaryMobile)
+  </script>
+{% endblock extra_css %}
+
+
+{% block content %}
+  {% block headline %}
+  <div class="fr-grid-row fr-grid-row--gutters">
+    {# main column, nothing in left column #}
+    <div class="fr-col fr-col-0 fr-col-md-3"></div>
+    <div class="fr-col fr-col-12 fr-col-md-6">
+      <h1>{% block h1 %}Votre projet{% endblock %}</h1>
+    </div>
+  </div>
+  {% endblock headline %}
+
+  <div class="fr-grid-row fr-grid-row--gutters">
+    {# left column #}
+    <div id="left-column" class="fr-col fr-col-0 fr-col-md-3">
+      {% if summary_theme or summary_sujets %}
+      <aside id="summary" class="fr-card--shadow fr-p-3w fr-text--sm"
+             data-controller="summary-mobile"
+      >
+        <h3 class="fr-h6">Votre projet</h3>
+        <div>
+          <span>Thème :</span>
+          {% dsfr_tag label=summary_theme extra_classes="fr-tag--sm" %}
+        </div>
+        {% if summary_sujets %}
+          <div>
+            <span>Sous-thèmes :</span>
+            <ul class="fr-tags-group">
+            {% for sujet in summary_sujets %}
+              <li>{% dsfr_tag label=sujet extra_classes="fr-tag--sm" %}</li>
+            {% endfor %}
+            </ul>
+          </div>
+          <a class="fr-link fr-link--sm" href="{% url 'aides_matching:step-2' %}">Explorer d'autres sous-thèmes</a>
+        {% endif %}
+        {% if summary_siret %}
+          <br><br>
+          <h3 class="fr-h6">Votre exploitation</h3>
+          <div>
+            <span>Siret :</span>
+            {% dsfr_tag label=summary_siret extra_classes="fr-tag--sm" %}
+          </div>
+          {% if summary_naf %}
+          <div>
+            <span>Activités :</span>
+            <ul class="fr-tags-group">
+            {% for naf in summary_naf %}
+              <li>{% dsfr_tag label=naf extra_classes="fr-tag--sm" %}</li>
+            {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+          {% if summary_cp %}
+          <div>
+            <span>Code postal :</span>
+            {% dsfr_tag label=summary_cp %}
+          </div>
+          {% endif %}
+          {% if summary_effectif %}
+          <div>
+            <span>Effectif :</span>
+            {% dsfr_tag label=summary_effectif %}
+          </div>
+          {% endif %}
+        {% endif %}
+        <button class="fr-btn fr-btn--tertiary fr-icon-arrow-right-line fr-hidden-sm"
+                id="btn-toggle-summary" aria-controls="summary"
+                data-action="click->summary-mobile#toggle"
+        >
+          Voir le résumé
+        </button>
+      </aside>
+      {% endif %}
+    </div>
+
+    {# main column #}
+    {% block main_col %}
+    <div class="fr-col fr-col-12 fr-col-md-6">
+      {% if stepper %}{% dsfr_stepper stepper %}{% endif %}
+
+      <h2 class="fr-h5">{% block h2 %}{% endblock %}</h2>
+      {% block main_col_content %}{% endblock %}
+    </div>
+    {% endblock %}
+  </div>
+{% endblock content %}

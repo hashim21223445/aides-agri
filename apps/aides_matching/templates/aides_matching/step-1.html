@@ -1,0 +1,17 @@
+{% extends "aides_matching/_base.html" %}
+
+{% load dsfr_tags %}
+
+{% block h2 %}Parmi ces thèmes, lequel correspond le mieux à votre projet ?{% endblock %}
+
+{% block main_col_content %}
+<section class="fr-container--fluid">
+  <div class="fr-grid-row fr-grid-row--gutters">
+  {% for theme in themes %}
+    <div class="fr-col">
+      {% dsfr_tile title=theme.title description=theme.description detail=theme.detail url=theme.link extra_classes="fr-tile--horizontal fr-tile--sm" svg_path="/static/dsfr/dist/artwork/pictograms/buildings/city-hall.svg" %}
+    </div>
+  {% endfor %}
+  </div>
+</section>
+{% endblock main_col_content %}

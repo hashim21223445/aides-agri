@@ -1,0 +1,32 @@
+@media screen and (max-width: 576px) {
+  body > div.fr-container {
+    margin-top: 0 !important;
+  }
+
+  h1 {
+    margin-bottom: 0;
+  }
+
+  #left-column {
+    position: relative;
+  }
+
+  #summary {
+    position: absolute;
+    width: 320px;
+    top: -20px;
+    left: -285px;
+    filter: none;
+    background-color: transparent;
+    background-image: linear-gradient(to bottom, var(--background-default-grey) 50px, transparent 50px 100%),
+                      linear-gradient(to right, var(--background-default-grey) 285px, transparent 35px);
+    padding: .5rem 4rem .5rem 3rem !important;
+    transition: left ease .3s;
+  }
+
+  #btn-toggle-summary {
+    position: absolute;
+    left: 285px;
+    top: 0;
+  }
+}

@@ -1,0 +1,34 @@
+{% load dsfr_tags %}
+
+<div data-controller="suggest">
+  <div class="fr-tags-group" data-suggest-target="tags">
+  {% for value, label in self.initials.items %}
+    <input type="hidden" name="naf[]" value="{{ value }}">
+    {% dsfr_tag label=label is_dismissable=True %}
+  {% endfor %}
+  </div>
+
+  <div class="fr-search-bar" role="search">
+    <label class="fr-label" for="suggest-{{ self.id }}-input">Recherche</label>
+    <input type="search" id="suggest-{{ self.id }}-input"
+           class="fr-input fr-icon-search-line" placeholder="Rechercher"
+           data-suggest-target="search"
+           data-action="input->suggest#search"
+    >
+  </div>
+  <ul class="fr-dropdown fr-hidden" data-suggest-target="options">
+  {% for value, labels in self.options.items %}
+    <li class="fr-dropdown__item" data-suggest-target="option">
+      <button type="button" class="fr-btn fr-btn--tertiary-no-outline fr-dropdown__entry"
+              data-action="click->suggest#choose"
+      >
+        {{ labels.long }}
+      </button>
+      <div class="fr-hidden">
+        <input type="hidden" name="naf[]" value="{{ value }}" disabled>
+        {% dsfr_tag label=labels.short is_dismissable=True %}
+      </div>
+    </li>
+  {% endfor %}
+  </ul>
+</div>
