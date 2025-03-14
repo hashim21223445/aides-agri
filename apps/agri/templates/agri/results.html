@@ -1,82 +1,60 @@
 {% extends "agri/_base.html" %}
 
-{% load dsfr_tags %}
+{% load static dsfr_tags %}
 
-{% block headline %}
-<div class="fr-grid-row fr-grid-row--gutters">
-  {# main column, nothing in left column #}
-  <div class="fr-col fr-col-0 fr-col-md-3"></div>
-  <div class="fr-col fr-col-12 fr-col-md-6">
-    <h1>Résultats pour votre projet</h1>
-  </div>
-  <div class="fr-col fr-col-0 fr-col-md-3">
-    <button type="button" class="fr-btn fr-btn--icon-left fr-btn--sm fr-btn--tertiary-no-outline fr-icon-file-pdf-line">Enregistrer en PDF</button>
-    <button type="button" class="fr-btn fr-btn--icon-left fr-btn--sm fr-btn--tertiary-no-outline fr-icon-mail-line">M'envoyer la recherche</button>
-  </div>
-</div>
-{% endblock headline %}
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'agri/results.css' %}">
+{% endblock extra_css %}
+
+{% block aside_tools %}
+  <button type="button"
+          class="fr-btn fr-btn--icon-left fr-btn--sm fr-pl-0 fr-btn--tertiary-no-outline fr-icon-file-pdf-line"
+  >
+    Enregistrer en PDF
+  </button>
+  <button type="button"
+          class="fr-btn fr-btn--icon-left fr-btn--sm fr-pl-0 fr-btn--tertiary-no-outline fr-icon-mail-line"
+  >
+    M'envoyer la recherche
+  </button>
+{% endblock aside_tools %}
+
+{% block h1 %}Notre recommandation.{% endblock h1 %}
 
 {% block main_col %}
 <div class="fr-col fr-col-12 fr-col-md-9">
-  <h2 class="fr-h5">Dispositifs recommandés selon votre besoin.</h2>
-
-  <p>Nos recommandations s’appuient sur les informations que vous nous avez partagé sur votre exploitation et votre projet. Nous avons à coeur de vous proposer dans un 1er temps les dispositifs qui semblent les plus pertinents afin de vous faciliter la prise de décision.</p>
   <div class="fr-highlight">
     <p>
-      <strong>Dispositifs complémentaires</strong>&nbsp;:
-      vous pouvez soumettre votre candidature pour ces dispositifs en parallèle afin de recevoir un accompagnement complet pour votre projet.
+      La sélection de ces dispositifs se base sur les informations que vous nous avez fournies en amont. Elle n’assure pas votre éligibilité.
     </p>
   </div>
 
   <div class="fr-container fr-p-0 fr-mb-4v">
     <div class="fr-grid-row fr-grid-row--gutters">
-      <div class="fr-col fr-col-12 fr-col-md-4">
-        {% dsfr_card main_cards_data extra_classes="fr-card--no-icon" %}
-      </div>
-      <div class="fr-col fr-col-12 fr-col-md-4">
-        {% dsfr_card main_cards_data extra_classes="fr-card--no-icon" %}
-      </div>
-      <div class="fr-col fr-col-12 fr-col-md-4">
-        {% dsfr_card main_cards_data extra_classes="fr-card--no-icon" %}
-      </div>
-    </div>
-  </div>
-
-  <div class="fr-callout">
-    <p class="fr-callout__title">Vous n’êtes pas sûr de la meilleure option ? Demandez à être contacté par un conseiller.</p>
-    <p class="fr-callout__text">
-      Nous transmettons votre projet et vos informations au sujet de votre exploitation à plusieurs susceptibles de pouvoir vous aider. Un conseiller vous appellera pour discuter de votre projet en profondeur et confirmer si leurs aides peuvent correspondre à votre besoin.
-    </p>
-    <button class="fr-btn fr-btn--primary">Être contacté</button>
-  </div>
-
-  <h2 class="fr-h5">D’autres dispositifs qui pourraient vous intéresser.</h2>
-
-  <div class="fr-container fr-p-0 fr-mb-4v">
-    <div class="fr-grid-row fr-grid-row--gutters fr-mb-6w">
-      <div class="fr-col fr-col-12 fr-col-md-6">
-        {% dsfr_card main_cards_data extra_classes="fr-card--horizontal fr-card--no-icon" %}
-      </div>
-      <div class="fr-col fr-col-12 fr-col-md-6">
-        {% dsfr_card main_cards_data extra_classes="fr-card--horizontal fr-card--no-icon" %}
-      </div>
-      <div class="fr-col fr-col-12 fr-col-md-6">
-        {% dsfr_card main_cards_data extra_classes="fr-card--horizontal fr-card--no-icon" %}
-      </div>
-      <div class="fr-col fr-col-12 fr-col-md-6">
-        {% dsfr_card main_cards_data extra_classes="fr-card--horizontal fr-card--no-icon" %}
-      </div>
-      <div class="fr-col fr-col-12 fr-col-md-6">
-        {% dsfr_card closed_cards_data extra_classes="fr-card--horizontal fr-card--no-icon" %}
-      </div>
-      <div class="fr-col fr-col-12 fr-col-md-6">
-        {% dsfr_card closed_cards_data extra_classes="fr-card--horizontal fr-card--no-icon" %}
+      <div class="fr-col fr-col-12">
+        <div class="fr-accordions-group fr-mx-4w fr-mb-6w">
+        {% for nature in natures_aides %}
+          <section class="fr-accordion">
+            <h3 class="fr-accordion__title">
+              <button type="button" class="fr-accordion__btn" aria-expanded="false" aria-controls="accordeon-nature-{{ nature.pk }}">
+                {{ nature }} (3 dispositifs)
+              </button>
+            </h3>
+            <div id="accordeon-nature-{{ nature.pk }}" class="fr-collapse">
+              {% for i in "123"|make_list %}
+              <div class="fr-col fr-col-12">
+                {% dsfr_card open_cards_data %}
+              </div>
+              {% endfor %}
+            </div>
+          </section>
+          {% if forloop.counter == 2 %}
+            {% dsfr_card conseillers_entreprises_card_data id="conseillers-entreprises" %}
+          {% endif %}
+        {% endfor %}
       </div>
     </div>
-  </div>
-
-  <div class="fr-grid-row fr-grid-row--gutters fr-grid-row--center fr-mb-6w">
-    {% dsfr_pagination page_obj %}
   </div>
 
   <div class="fr-grid-row fr-grid-row--gutters fr-grid-row--center fr-mb-6w">
