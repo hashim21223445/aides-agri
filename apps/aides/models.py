@@ -1,38 +1,80 @@
 from django.db import models
-from django.contrib.postgres import fields as postgres_fields
 
 from grist_loader.models import GristModel
 
 
-class Operateur(GristModel):
+class Organisme(GristModel):
     class Meta:
-        verbose_name = "Opérateur"
-        verbose_name_plural = "Opérateurs"
+        verbose_name = "Organisme"
+        verbose_name_plural = "Organismes"
 
     nom = models.CharField(blank=True)
+    acronyme = models.CharField(blank=True)
     zones_geographiques = models.ManyToManyField("ZoneGeographique")
+
+    def __str__(self):
+        return self.nom
+
+
+class ThemeQuerySet(models.QuerySet):
+    def with_aides_count(self):
+        return self.annotate(aides_count=models.Count("sujets__aides"))
 
 
 class Theme(GristModel):
     class Meta:
         verbose_name = "Thème"
         verbose_name_plural = "Thèmes"
-        ordering = ("nom",)
+
+    objects = ThemeQuerySet.as_manager()
 
     nom = models.CharField(blank=True)
     nom_court = models.CharField(blank=True)
     description = models.TextField(blank=True)
+    urgence = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.nom
+
+
+class SujetQuerySet(models.QuerySet):
+    def with_aides_count(self):
+        return self.annotate(aides_count=models.Count("aides"))
 
 
 class Sujet(GristModel):
     class Meta:
         verbose_name = "Sujet"
         verbose_name_plural = "Sujets"
-        ordering = ("nom",)
+
+    objects = SujetQuerySet.as_manager()
 
     nom = models.CharField(blank=True)
     nom_court = models.CharField(blank=True)
-    themes = models.ManyToManyField(Theme)
+    themes = models.ManyToManyField(Theme, related_name="sujets")
+
+    def __str__(self):
+        return self.nom
+
+
+class TypeQuerySet(models.QuerySet):
+    def get_conseil(self):
+        return self.get(nom="Conseil")
+
+
+class Type(GristModel):
+    class Meta:
+        verbose_name = "Type d'aides"
+        verbose_name_plural = "Types d'aides"
+        ordering = ("nom",)
+
+    objects = TypeQuerySet.as_manager()
+
+    nom = models.CharField(blank=True)
+    description = models.CharField(blank=True)
+
+    def __str__(self):
+        return self.nom
 
 
 class ZoneGeographiqueQuerySet(models.QuerySet):
@@ -91,10 +133,10 @@ class AideQuerySet(models.QuerySet):
             & (models.Q(effectif_max__gte=effectif_high) | models.Q(effectif_max=None))
         )
 
-    def by_type(self, type_aide: "Aide.Type"):
+    def by_type(self, type_aide: Type):
         return self.filter(types__contains=[type_aide])
 
-    def by_types(self, types: set["Aide.Type"]):
+    def by_types(self, types: Type):
         return self.filter(types__contains=types)
 
     def by_zone_geographique(self, code_commune: str) -> models.QuerySet:
@@ -111,11 +153,11 @@ class AideQuerySet(models.QuerySet):
             # Same departement
             models.Q(zones_geographiques=departement)
             |
-            # Operateur : same EPCI
-            models.Q(operateur__zones_geographiques__enfants__numero=code_commune)
+            # Organisme : same EPCI
+            models.Q(organisme__zones_geographiques__enfants__numero=code_commune)
             |
-            # Operateur : same commune
-            models.Q(operateur__zones_geographiques__numero=code_commune)
+            # Organisme : same commune
+            models.Q(organisme__zones_geographiques__numero=code_commune)
         )
 
 
@@ -123,7 +165,6 @@ class Aide(GristModel):
     class Meta:
         verbose_name = "Aide"
         verbose_name_plural = "Aides"
-        required_db_vendor = "postgresql"
 
     objects = AideQuerySet.as_manager()
 
@@ -135,26 +176,13 @@ class Aide(GristModel):
         DEPARTEMENTAL = "Départemental", "Départemental"
         LOCAL = "Local", "Local"
 
-    class Type(models.TextChoices):
-        ETUDE = "Étude", "Étude"
-        FORMATION = "Formation", "Formation"
-        FINANCEMENT = "Financement", "Financement"
-        AVANTAGE_FISCAL = "Avantage fiscal", "Avantage fiscal"
-        PRET = "Prêt", "Prêt"
-        REMPLACEMENT = "Remplacement", "Remplacement"
-        CONSEIL = "Conseil", "Conseil"
-        AUDIT = "Audit", "Audit"
-
     nom = models.CharField(blank=True)
-    operateur = models.ForeignKey(Operateur, null=True, on_delete=models.CASCADE)
-    operateurs_secondaires = models.ManyToManyField(
-        Operateur, related_name="aides_secondaires"
+    organisme = models.ForeignKey(Organisme, null=True, on_delete=models.CASCADE)
+    organismes_secondaires = models.ManyToManyField(
+        Organisme, related_name="aides_secondaires"
     )
-    types = postgres_fields.ArrayField(
-        models.CharField(max_length=20, choices=Type), null=True
-    )
-    themes = models.ManyToManyField(Theme)
-    sujets = models.ManyToManyField(Sujet)
+    types = models.ManyToManyField(Type, related_name="aides")
+    sujets = models.ManyToManyField(Sujet, related_name="aides")
     promesse = models.CharField(blank=True)
     description_courte = models.TextField(blank=True)
     description_longue = models.TextField(blank=True)
@@ -167,4 +195,7 @@ class Aide(GristModel):
     couverture_geographique = models.CharField(
         choices=CouvertureGeographique, default=CouvertureGeographique.NATIONAL
     )
-    zones_geographiques = models.ManyToManyField(ZoneGeographique)
+    zones_geographiques = models.ManyToManyField(ZoneGeographique, related_name="aides")
+
+    def __str__(self):
+        return self.nom

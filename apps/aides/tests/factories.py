@@ -3,12 +3,12 @@ import factory
 from aides import models
 
 
-class OperateurFactory(factory.django.DjangoModelFactory):
+class OrganismeFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = models.Operateur
+        model = models.Organisme
 
     external_id = factory.Sequence(lambda n: n)
-    nom = factory.Sequence(lambda n: f"Opérateur {n}")
+    nom = factory.Sequence(lambda n: f"Organisme {n}")
 
 
 class ThemeFactory(factory.django.DjangoModelFactory):
@@ -25,6 +25,15 @@ class SujetFactory(factory.django.DjangoModelFactory):
 
     external_id = factory.Sequence(lambda n: n)
     nom = factory.Sequence(lambda n: f"Sujet {n}")
+
+
+class TypeFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = models.Type
+
+    external_id = factory.Sequence(lambda n: n)
+    nom = factory.Sequence(lambda n: f"Type d'aide {n}")
+    description = factory.Faker("sentence")
 
 
 class ZoneGeographiqueFactory(factory.django.DjangoModelFactory):

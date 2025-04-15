@@ -3,7 +3,8 @@ from grist_loader.loader import GristLoader, register_grist_loader
 from .models import (
     Theme,
     Sujet,
-    Operateur,
+    Type,
+    Organisme,
     ZoneGeographique,
     Aide,
 )
@@ -17,6 +18,7 @@ class ThemeLoader(GristLoader):
         "Libelle": Theme.nom,
         "Libelle_court": Theme.nom_court,
         "Biscuit2": Theme.description,
+        "Urgence": Theme.urgence,
     }
 
 
@@ -32,13 +34,23 @@ class SujetLoader(GristLoader):
 
 
 @register_grist_loader
-class OperateurLoader(GristLoader):
-    model = Operateur
-    table = "Ref_Operateurs"
+class TypeLoader(GristLoader):
+    model = Type
+    table = "Ref_Types"
+    fields = {
+        "Type_aide": Type.nom,
+        "Description": Type.description,
+    }
+
+
+@register_grist_loader
+class OrganismeLoader(GristLoader):
+    model = Organisme
+    table = "Ref_Organisme"
     required_cols = ("Nom",)
     fields = {
-        "Nom": Operateur.nom,
-        "Zones_geographiques": Operateur.zones_geographiques,
+        "Nom": Organisme.nom,
+        "Zones_geographiques": Organisme.zones_geographiques,
     }
 
 
@@ -60,8 +72,11 @@ class ZoneGeographiqueLoader(GristLoader):
 @register_grist_loader
 class AideLoader(GristLoader):
     model = Aide
-    table = "Aides"
+    table = "Solutions"
     required_cols = ("Nom",)
+    filter = {
+        "GO": [True],
+    }
     fields = {
         "Nom": Aide.nom,
         "Promesse": Aide.promesse,
@@ -74,9 +89,8 @@ class AideLoader(GristLoader):
         "Date_d_ouverture": Aide.date_debut,
         "Date_de_cloture": Aide.date_fin,
         "Couverture_Geographique": Aide.couverture_geographique,
-        "Operateur_principal": Aide.operateur,
-        "Operateurs_autres": Aide.operateurs_secondaires,
-        "Themes": Aide.themes,
+        "Organisme_principal": Aide.organisme,
+        "Organismes_autres": Aide.organismes_secondaires,
         "Sujets": Aide.sujets,
         "Zones_geographiques": Aide.zones_geographiques,
     }

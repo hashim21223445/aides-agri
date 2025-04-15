@@ -32,19 +32,6 @@
     Stimulus.register("select-rich", SelectRich)
     Stimulus.register("summary-mobile", SummaryMobile)
   </script>
-
-
-  <script type="module">
-    import { Application } from "@hotwired/stimulus"
-    import { SelectRich } from "select-rich"
-    import { CheckboxGroupField } from "checkbox-group-field"
-    import { FormWithCustomFields } from "form-with-custom-fields"
-    window.Stimulus ??= Application.start()
-
-    Stimulus.register("select-rich", SelectRich)
-    Stimulus.register("checkbox-group-field", CheckboxGroupField)
-    Stimulus.register("form-with-custom-fields", FormWithCustomFields)
-  </script>
 {% endblock extra_css %}
 
 {% block h1 %}Votre exploitation.{% endblock %}
@@ -80,7 +67,7 @@
       </select>
     </div>
     <div class="fr-fieldset__element fr-input-group fr-mb-3w">
-      {% ui_select_rich_multi label="Filières" name="filieres" required=True options=filieres initials=filieres_initials searchable=True search_placeholder="élevage, légumes, etc." with_tags=True helper="Nous n'avons pas pu déduire la filière de votre exploitation, veuillez en sélectionner au moins une ci-dessus." %}
+      {% ui_select_rich_multi label="Filières" name="filieres" required=True options=filieres initials=filieres_initials searchable=True search_placeholder="élevage, légumes, etc." with_tags=True helper=filieres_helper %}
     </div>
     <div class="fr-fieldset__element">
       {% ui_checkbox_group_field label="Faites-vous partie d'un ou plusieurs regroupements ?" name="regroupements" options=groupements error_message="Ce champ est requis pour passer à la suite." %}

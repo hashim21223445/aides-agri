@@ -7,30 +7,27 @@ from django.utils.timezone import now
 from django.views.generic import TemplateView, ListView
 from django.views.generic.base import ContextMixin
 
-from aides.models import Theme, Sujet, Aide, ZoneGeographique
+from aides.models import Theme, Sujet, Aide, ZoneGeographique, Type
 
 from .models import GroupementProducteurs, Filiere
 from . import siret
 
 
-class Step1Mixin(ContextMixin):
-    def get_context_data(self, **kwargs):
-        context_data = super().get_context_data(**kwargs)
-        context_data.update(
-            {
-                "themes": Theme.objects.all(),
-            }
-        )
-        return context_data
-
-
-class HomeView(Step1Mixin, TemplateView):
-    template_name = "agri/home.html"
+class HomeView(TemplateView):
+    def get_template_names(self):
+        if self.request.htmx:
+            template_name = "agri/_partials/home_themes.html"
+        else:
+            template_name = "agri/home.html"
+        return [template_name]
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         context_data.update(
             {
+                "themes": Theme.objects.with_aides_count().order_by(
+                    "-urgence", "-aides_count"
+                ),
                 "conseillers_entreprises_card": {
                     "heading_tag": "h4",
                     "extra_classes": "fr-card--horizontal fr-border-default--red-marianne",
@@ -51,10 +48,18 @@ class HomeView(Step1Mixin, TemplateView):
                             "text": "Ministère de l’Économie x Ministère du Travail",
                         },
                     },
-                }
+                },
             }
         )
-        context_data["themes"] = context_data["themes"][:4]
+        if self.request.htmx and self.request.GET.get("more_themes", None):
+            # show more themes, partial template
+            context_data["themes"] = context_data["themes"][4:]
+        elif not self.request.htmx and not self.request.GET.get("more_themes", None):
+            # nominal case: show only 4 themes, full page
+            context_data["themes"] = context_data["themes"][:4]
+        else:
+            # show all themes, because more_themes was asked, but on a new page
+            pass
         return context_data
 
 
@@ -128,11 +133,6 @@ class AgriMixin(ContextMixin):
         return context_data
 
 
-class Step1View(AgriMixin, Step1Mixin, TemplateView):
-    template_name = "agri/step-1.html"
-    STEP = 1
-
-
 class Step2View(AgriMixin, TemplateView):
     template_name = "agri/step-2.html"
     STEP = 2
@@ -143,7 +143,9 @@ class Step2View(AgriMixin, TemplateView):
             {
                 "sujets": {
                     f"sujet-{sujet.pk}": sujet
-                    for sujet in Sujet.objects.filter(themes=self.theme)
+                    for sujet in Sujet.objects.with_aides_count()
+                    .filter(themes=self.theme)
+                    .order_by("-aides_count")
                 }
             }
         )
@@ -201,7 +203,9 @@ class Step5View(AgriMixin, TemplateView):
                     for pk, nom in Filiere.objects.values_list("pk", "nom")
                 ],
                 "filieres_initials": [filiere.pk] if filiere else [],
-                "filiere": filiere,
+                "filieres_helper": "Nous n'avons pas pu déduire la filière de votre exploitation, veuillez en sélectionner au moins une ci-dessus."
+                if not filiere
+                else "",
             }
         )
 
@@ -219,7 +223,7 @@ class ResultsView(AgriMixin, ListView):
                 siret.mapping_effectif_complete[self.code_effectif]["min"],
                 siret.mapping_effectif_complete[self.code_effectif]["max"],
             )
-            .select_related("operateur")
+            .select_related("organisme")
             .prefetch_related("zones_geographiques")
             .order_by("-date_fin")
         )
@@ -228,7 +232,7 @@ class ResultsView(AgriMixin, ListView):
         context_data = super().get_context_data(**kwargs)
         aides_by_type = defaultdict(set)
         for aide in self.get_queryset():
-            for type_aide in aide.types:
+            for type_aide in aide.types.all():
                 aides_by_type[type_aide].add(aide)
         context_data.update(
             {
@@ -238,6 +242,7 @@ class ResultsView(AgriMixin, ListView):
                             "heading_tag": "h2",
                             "extra_classes": "fr-card--horizontal-tier fr-card--no-icon",
                             "title": aide.nom,
+                            "description": aide.description_courte,
                             "link": "#",
                             "image_url": static("agri/images/placeholder.1x1.svg"),
                             "ratio_class": "fr-ratio-1x1",
@@ -255,7 +260,7 @@ class ResultsView(AgriMixin, ListView):
                             "top_detail": {
                                 "detail": {
                                     "icon_class": "fr-icon-arrow-right-line",
-                                    "text": aide.operateur.nom,
+                                    "text": aide.organisme.nom,
                                 },
                             },
                         }
@@ -263,29 +268,28 @@ class ResultsView(AgriMixin, ListView):
                     ]
                     for type_aide, aides in aides_by_type.items()
                 },
-                "conseillers_entreprises_card_data": {
-                    "heading_tag": "h2",
-                    "extra_classes": "fr-card--horizontal-tier fr-border-default--red-marianne fr-my-3w",
-                    "title": "Conseillers Entreprises",
-                    "description": "Le service public d’accompagnement des entreprises. Échangez avec les conseillers qui peuvent vous aider dans vos projets, vos difficultés ou les transformations nécessaires à la réussite de votre entreprise.",
-                    "link": "#",
-                    "image_url": static(
-                        "agri/images/home/illustration_conseillers_entreprise.svg"
-                    ),
-                    "ratio_class": "fr-ratio-1x1",
-                    "media_badges": [
-                        {
-                            "extra_classes": "fr-badge--green-emeraude",
-                            "label": "En cours",
-                        }
-                    ],
-                    "top_detail": {
-                        "detail": {
-                            "icon_class": "fr-icon-arrow-right-line",
-                            "text": "Ministère de l’Économie x Ministère du Travail",
-                        },
-                    },
-                },
+            }
+        )
+        type_conseil = Type.objects.get_conseil()
+        if type_conseil not in context_data["aides"]:
+            context_data["aides"][type_conseil] = []
+        context_data["aides"][type_conseil].append(
+            {
+                "heading_tag": "h2",
+                "extra_classes": "fr-card--horizontal-tier fr-card--no-icon fr-border-default--red-marianne",
+                "title": "Conseillers Entreprises",
+                "description": "Le service public d’accompagnement des entreprises. Échangez avec les conseillers qui peuvent vous aider dans vos projets, vos difficultés ou les transformations nécessaires à la réussite de votre entreprise.",
+                "link": "#",
+                "image_url": static(
+                    "agri/images/home/illustration_conseillers_entreprise.svg"
+                ),
+                "ratio_class": "fr-ratio-1x1",
+                "media_badges": [
+                    {
+                        "extra_classes": "fr-badge--green-emeraude",
+                        "label": "En cours",
+                    }
+                ],
             }
         )
         return context_data

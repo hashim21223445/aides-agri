@@ -5,7 +5,8 @@ from grist_loader.admin import AbstractGristModelAdmin
 from .models import (
     Theme,
     Sujet,
-    Operateur,
+    Type,
+    Organisme,
     ZoneGeographique,
     Aide,
 )
@@ -13,21 +14,46 @@ from .models import (
 
 @admin.register(Theme)
 class ThemeAdmin(AbstractGristModelAdmin):
-    list_display = AbstractGristModelAdmin.list_display + ("nom",)
+    list_display = AbstractGristModelAdmin.list_display + (
+        "nom",
+        "urgence",
+        "aides_count",
+    )
     list_display_links = AbstractGristModelAdmin.list_display_links + ("nom",)
-    fields = ("nom", "nom_court", "description")
+    fields = ("nom", "nom_court", "description", "urgence")
+
+    def aides_count(self, obj):
+        return obj.aides_count
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).with_aides_count()
 
 
 @admin.register(Sujet)
 class SujetAdmin(AbstractGristModelAdmin):
-    list_display = AbstractGristModelAdmin.list_display + ("nom",)
+    list_display = AbstractGristModelAdmin.list_display + ("nom", "aides_count")
     list_display_links = AbstractGristModelAdmin.list_display_links + ("nom",)
+    list_filter = ("themes",)
     fields = ("nom", "nom_court", "themes")
 
+    def aides_count(self, obj):
+        return obj.aides_count
 
-@admin.register(Operateur)
-class OperateurAdmin(AbstractGristModelAdmin):
+    def get_queryset(self, request):
+        return super().get_queryset(request).with_aides_count()
+
+
+@admin.register(Type)
+class TypeAdmin(AbstractGristModelAdmin):
     list_display = AbstractGristModelAdmin.list_display + ("nom",)
+    list_display_links = AbstractGristModelAdmin.list_display_links + ("nom",)
+    fields = ("nom", "description")
+
+
+@admin.register(Organisme)
+class OrganismeAdmin(AbstractGristModelAdmin):
+    list_display = AbstractGristModelAdmin.list_display + ("nom",)
+    list_display_links = AbstractGristModelAdmin.list_display_links + ("nom",)
     fields = ("nom", "zones_geographiques")
 
 
@@ -39,6 +65,9 @@ class ZoneGeographiqueAdmin(AbstractGristModelAdmin):
         "parent",
         "epci",
     )
+    list_display_links = AbstractGristModelAdmin.list_display_links + ("nom",)
+    list_filter = ("type",)
+    list_select_related = ("parent", "epci")
     fields = ("parent", "type", "nom", "epci")
 
 
@@ -46,13 +75,14 @@ class ZoneGeographiqueAdmin(AbstractGristModelAdmin):
 class AideAdmin(AbstractGristModelAdmin):
     list_display = AbstractGristModelAdmin.list_display + (
         "nom",
-        "types",
-        "operateur",
+        "organisme",
         "date_debut",
         "date_fin",
         "effectif_min",
         "effectif_max",
     )
+    list_display_links = AbstractGristModelAdmin.list_display_links + ("nom",)
+    list_filter = ("sujets", "types")
     fieldsets = [
         (
             "Infos de base",
@@ -60,8 +90,8 @@ class AideAdmin(AbstractGristModelAdmin):
                 "fields": [
                     "nom",
                     "types",
-                    "operateur",
-                    "operateurs_secondaires",
+                    "organisme",
+                    "organismes_secondaires",
                 ],
             },
         ),
@@ -101,4 +131,4 @@ class AideAdmin(AbstractGristModelAdmin):
         ),
     ]
 
-    list_select_related = ("operateur",)
+    list_select_related = ("organisme",)

@@ -13,6 +13,9 @@ class Filiere(GristModel):
     position = models.IntegerField(unique=True, default=0)
     code_naf = models.CharField(max_length=10, blank=True)
 
+    def __str__(self):
+        return self.nom
+
 
 class SousFiliere(GristModel):
     class Meta:
@@ -21,6 +24,9 @@ class SousFiliere(GristModel):
 
     nom = models.CharField(max_length=100, blank=True)
     filiere = models.ForeignKey(Filiere, on_delete=models.CASCADE, null=True)
+
+    def __str__(self):
+        return self.nom
 
 
 class Production(GristModel):
@@ -31,12 +37,27 @@ class Production(GristModel):
     nom = models.CharField(max_length=100, blank=True)
     sous_filiere = models.ForeignKey(SousFiliere, on_delete=models.CASCADE, null=True)
 
+    def __str__(self):
+        return self.nom
+
 
 class GroupementProducteurs(GristModel):
     class Meta:
         verbose_name = "Groupement de producteurs"
         verbose_name_plural = "Groupement de producteurs"
-        ordering = ("-nom",)
+        ordering = ("-is_real", "nom")
 
     nom = models.CharField(max_length=100, blank=True)
     libelle = models.CharField(max_length=200, blank=True)
+    is_real = models.GeneratedField(
+        expression=models.Case(
+            models.When(libelle="", then=False),
+            default=True,
+            output_field=models.BooleanField(),
+        ),
+        output_field=models.BooleanField(),
+        db_persist=True,
+    )
+
+    def __str__(self):
+        return self.nom
