@@ -24,3 +24,7 @@ Shorthands exist for:
 - `just shell`
 - `just makemigrations`
 - `just migrate`
+
+## Acknowledgements
+
+This project is tested with BrowserStack.
