@@ -4,15 +4,15 @@ from django.core.mail import send_mail
 from django.http.request import QueryDict
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django_tasks import task
 from mjml import mjml2html
-from procrastinate.contrib.django import app
 
 from aides.models import Theme, Sujet, ZoneGeographique, Aide
 
 from .models import Filiere, GroupementProducteurs
 
 
-@app.task
+@task()
 def send_results_by_mail(
     email: str,
     base_url: str,
@@ -52,7 +52,7 @@ def send_results_by_mail(
     send_mail(
         "Aides Agri : notre recommandation pour votre besoin et profil d'exploitant",
         f"Retrouvez nos recommandations en cliquant sur ce lien : {url}",
-        "aides-agri@beta.gouv.fr",
+        "Aides Agri <no-reply@aides-agri.beta.gouv.fr>",
         [email],
         html_message=mjml2html(
             render_to_string(
