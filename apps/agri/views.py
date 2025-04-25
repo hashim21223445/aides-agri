@@ -4,7 +4,6 @@ from collections import defaultdict
 from django.db.models import Q
 from django.shortcuts import render
 from django.templatetags.static import static
-from django.urls import reverse
 from django.utils.timezone import now
 from django.views.generic import TemplateView, ListView, View
 from django.views.generic.base import ContextMixin
@@ -187,12 +186,10 @@ class Step5View(AgriMixin, TemplateView):
                 "mapping_tranches_effectif": siret.mapping_effectif,
                 "code_effectif": self.code_effectif,
                 "etablissement": self.etablissement,
-                "groupements": {
-                    pk: nom
-                    for pk, nom in GroupementProducteurs.objects.values_list(
-                        "pk", "nom"
-                    )
-                },
+                "groupements": [
+                    (g.pk, g.nom, g.libelle)
+                    for g in GroupementProducteurs.objects.all()
+                ],
                 "filieres": [
                     (pk, nom, nom)
                     for pk, nom in Filiere.objects.values_list("pk", "nom")
@@ -243,7 +240,7 @@ class ResultsView(ResultsMixin, ListView):
                             "extra_classes": "fr-card--horizontal-tier fr-card--no-icon",
                             "title": aide.nom,
                             "description": aide.promesse,
-                            "link": reverse("aides:aide", kwargs={"pk": aide.pk}),
+                            "link": aide.get_absolute_url(),
                             "image_url": static("agri/images/placeholder.1x1.svg"),
                             "ratio_class": "fr-ratio-1x1",
                             "media_badges": [

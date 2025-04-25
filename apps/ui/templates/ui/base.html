@@ -1,7 +1,4 @@
-{% load static %}
-
-{% load i18n static dsfr_tags %}
-<!DOCTYPE html>
+{% load i18n static dsfr_tags %}<!DOCTYPE html>
 <html lang="fr"
       data-fr-scheme="system"
       {% if SITE_CONFIG.mourning %}data-fr-mourning{% endif %}>
@@ -15,18 +12,19 @@
     <link rel="stylesheet" href="{% static 'ui/base.css' %}">
     {% block extra_css %}{% endblock extra_css %}
 
-    <title>{% block title %}{% endblock title %} — {{ SITE_CONFIG.site_title }}</title>
+    <title>{% block pagetitle %}{% block title %}{% endblock title %} — {{ SITE_CONFIG.site_title }}{% endblock pagetitle %}</title>
 
     <meta name="format-detection"
           content="telephone=no,date=no,address=no,email=no,url=no">
 
     {% block opengraph %}{% endblock opengraph %}
 
-    {% if SENTRY_DSN %}{% include "ui/blocks/sentry.html" %}{% endif %}
-    {% if MATOMO_SITE_ID %}{% include "ui/blocks/matomo.html" %}{% endif %}
+    {% if UI_SENTRY_PUBLIC_KEY %}{% include "ui/blocks/sentry.html" %}{% endif %}
+    {% if UI_MATOMO_SITE_ID %}{% include "ui/blocks/matomo.html" %}{% endif %}
     {% block extra_head_js %}{% endblock extra_head_js %}
   </head>
   <body hx-headers='{"x-csrftoken": "{{ csrf_token }}"}'>
+  {% block body %}
     {% block skiplinks %}
       {% dsfr_skiplinks skiplinks %}
     {% endblock skiplinks %}
@@ -55,5 +53,6 @@
 
     {% dsfr_js nonce=request.csp_nonce %}
     {% block extra_js %}{% endblock extra_js %}
+  {% endblock body %}
   </body>
 </html>
