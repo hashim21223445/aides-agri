@@ -4,7 +4,6 @@
 
 {% block extra_css %}
   {{ block.super }}
-  <link rel="stylesheet" href="{% static 'ui/components/tile_checkbox.css' %}">
   <link rel="stylesheet" href="{% static 'agri/step-2.css' %}">
 {% endblock extra_css %}
 
@@ -13,37 +12,42 @@
   {
     "imports": {
       "@hotwired/stimulus": "{% static 'vendor/stimulus.js' %}",
+      "dsfr-form": "{% static 'ui/controllers/dsfr_form.js' %}",
       "checkbox-group-field": "{% static 'ui/components/checkbox-group-field.js' %}",
-      "form-with-custom-fields": "{% static 'ui/controllers/form_with_custom_fields.js' %}",
       "summary-mobile": "{% static 'agri/summary-mobile.js' %}"
     }
   }
   </script>
   <script type="module">
     import { Application } from "@hotwired/stimulus"
+    import { DsfrForm } from "dsfr-form"
     import { CheckboxGroupField } from "checkbox-group-field"
-    import { FormWithCustomFields } from "form-with-custom-fields"
     import { SummaryMobile } from "summary-mobile"
 
     window.Stimulus = Application.start()
 
+    Stimulus.register("dsfr-form", DsfrForm)
     Stimulus.register("checkbox-group-field", CheckboxGroupField)
-    Stimulus.register("form-with-custom-fields", FormWithCustomFields)
     Stimulus.register("summary-mobile", SummaryMobile)
   </script>
 
+  <script type="module" src="{% static 'vendor/htmx.esm.js' %}"></script>
 {% endblock extra_head_js %}
+
+{% block modals %}
+  {% include 'agri/blocks/modal_feedback_themes_sujets.html' %}
+{% endblock modals %}
 
 {% block title %}Votre projet{% endblock title %}
 {% block h1 %}Votre projet.{% endblock h1 %}
-{% block h2 %}Quels sont les sujets qui correspondent à votre projet ?{% endblock %}
+{% block h2 %}Quels sont les sujets qui correspondent à votre projet ?{% endblock %}
 
 {% block action %}{% url 'agri:step-3' %}{% endblock action %}
 
 {% block extra_form_attributes %}
-  data-controller="form-with-custom-fields"
-  data-action="submit->form-with-custom-fields#submit change->form-with-custom-fields#validate"
-  data-form-with-custom-fields-checkbox-group-field-outlet="[data-controller=checkbox-group-field]"
+  data-controller="dsfr-form"
+  data-action="change->dsfr-form#validateCustomFields"
+  data-dsfr-form-checkbox-group-field-outlet="[data-controller=checkbox-group-field]"
 {% endblock extra_form_attributes %}
 
 {% block form %}
@@ -52,8 +56,11 @@
      data-checkbox-group-field-required-value="true"
 >
   {% for id, sujet in sujets.items %}
-  <div class="fr-col fr-col-12">
-    {% ui_tile_checkbox id=id name="sujets" value=sujet.pk title=sujet.nom description=sujet.description extra_classes="fr-tile--horizontal fr-tile--sm" %}
+  <div class="fr-col fr-col-12 sujet">
+    <div class="fr-checkbox-group">
+      <input id="{{ id }}" type="checkbox" name="sujets" value="{{ sujet.pk }}">
+      <label class="fr-label" for="{{ id }}">{{ sujet.nom }}</label>
+    </div>
   </div>
   {% endfor %}
   <div class="fr-error-text fr-icon-error-line fr-hidden" data-checkbox-group-field-target="error">
@@ -61,3 +68,14 @@
   </div>
 </div>
 {% endblock form %}
+
+{% block main_col_footer %}
+<div id="cta-feedback">
+  <h4 class="fr-text--lg fr-mt-5w">Vous ne trouvez pas ici votre situation actuelle ?</h4>
+  <p>
+    <button type="button" class="fr-btn fr-btn--tertiary" data-fr-opened="false" aria-controls="fr-modal-feedback">
+      Racontez-nous votre besoin
+    </button>
+  </p>
+</div>
+{% endblock main_col_footer %}

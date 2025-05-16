@@ -5,6 +5,7 @@
 {% block extra_css %}
   {{ block.super }}
   <link rel="stylesheet" href="{% static 'agri/results.css' %}">
+  <link rel="stylesheet" href="{% static 'product/base.css' %}">
 {% endblock extra_css %}
 
 {% block extra_head_js %}
@@ -12,23 +13,44 @@
   {
     "imports": {
       "@hotwired/stimulus": "{% static 'vendor/stimulus.js' %}",
+      "dsfr-form": "{% static 'ui/controllers/dsfr_form.js' %}",
       "summary-mobile": "{% static 'agri/summary-mobile.js' %}"
     }
   }
   </script>
   <script type="module">
     import { Application } from "@hotwired/stimulus"
+    import { DsfrForm } from "dsfr-form"
     import { SummaryMobile } from "summary-mobile"
 
     window.Stimulus = Application.start()
 
+    Stimulus.register("dsfr-form", DsfrForm)
     Stimulus.register("summary-mobile", SummaryMobile)
   </script>
 
   <script type="module" src="{% static 'vendor/htmx.esm.js' %}"></script>
 {% endblock extra_head_js %}
 
+{% block extra_js %}
+<script>
+window.onbeforeprint = evt => {
+  document.querySelectorAll(".fr-collapse:not(.fr-collapse--expanded)").forEach(elt => {
+    elt.classList.add("fr-collapse--expanded")
+    elt.classList.add("fr-collapse--expanded-for-print")
+  })
+}
+window.onafterprint = evt => {
+  document.querySelectorAll(".fr-collapse--expanded-for-print").forEach(elt => {
+    elt.classList.remove("fr-collapse--expanded")
+    elt.classList.remove("fr-collapse--expanded-for-print")
+  })
+}
+</script>
+{% endblock extra_js %}
+
 {% block modals %}
+{% if aides %}
 <dialog class="fr-modal"
         id="modal-send-by-mail"
         aria-labelledby="modal-send-by-mail-title"
@@ -40,7 +62,8 @@
           <form method="post"
                 action="{% url 'agri:send-results-by-mail' %}{% querystring %}"
                 hx-boost="true"
-                hx-target="#modal-send-by-mail-content"
+                hx-target="#content"
+                hx-swap="beforebegin show:none"
                 hx-push-url="false"
           >
             {% csrf_token %}
@@ -68,8 +91,18 @@
             </div>
             <div class="fr-modal__footer" id="modal-send-results-by-mail-footer">
               <div class="fr-btns-group fr-btns-group--right fr-btns-group--inline-reverse fr-btns-group--inline-lg fr-btns-group--icon-left">
-                <button class="fr-btn fr-icon-checkbox-circle-line fr-btn--icon-left">Envoyer par e-mail</button>
-                <button class="fr-btn fr-btn--secondary" aria-controls="modal-send-by-mail">Annuler</button>
+                <button type="submit"
+                        class="fr-btn fr-icon-checkbox-circle-line fr-btn--icon-left"
+                        aria-controls="modal-send-by-mail"
+                >
+                  Envoyer par e-mail
+                </button>
+                <button type="button"
+                        class="fr-btn fr-btn--secondary"
+                        aria-controls="modal-send-by-mail"
+                >
+                  Annuler
+                </button>
               </div>
             </div>
           </form>
@@ -78,9 +111,11 @@
     </div>
   </div>
 </dialog>
+{% endif %}
 {% endblock modals %}
 
 {% block aside_tools %}
+  {% if aides %}
   <button type="button"
           class="fr-btn fr-btn--icon-left fr-btn--sm fr-pl-0 fr-btn--tertiary-no-outline fr-icon-mail-line"
           aria-controls="modal-send-by-mail"
@@ -88,6 +123,13 @@
   >
     M’envoyer la recherche
   </button>
+  <button type="button"
+          class="fr-btn fr-btn--icon-left fr-btn--sm fr-pl-0 fr-btn--tertiary-no-outline fr-icon-file-pdf-line"
+          onclick="window.print()"
+  >
+    Télécharger en PDF
+  </button>
+  {% endif %}
 {% endblock aside_tools %}
 
 {% block title %}Nos recommandations{% endblock title %}
@@ -96,43 +138,57 @@
 {% block main_col %}
 <div class="fr-col fr-col-12 fr-col-md-9">
   <div class="fr-highlight">
-    <p>La recommandation de ces dispositifs se base sur les informations que vous nous avez fournies en amont. Elle n’assure pas votre éligibilité.</p>
-    <p>Nous nous efforçons de recenser et mettre à jour notre catalogue en construction. Il se peut que certaines aides ne soient pas encore recensées par notre équipe.</p>
+    {% if aides %}
+      <p>La recommandation de ces dispositifs se base sur les informations que vous nous avez fournies en amont. Elle n’assure pas votre éligibilité.</p>
+      <p>Nous nous efforçons de recenser et mettre à jour notre catalogue encore en construction. Il se peut que certaines aides ne soient pas encore recensées par notre équipe.</p>
+    {% else %}
+      <p>La recommandation de dispositifs se base sur les informations que vous nous avez fournies en amont.</p>
+      <p><strong>Malheureusement, nous n’avons pas recensé à ce jour de dispositif correspondant à la fois à votre besoin et à votre profil d’exploitant.</strong></p>
+      <p>Nous nous efforçons de recenser et mettre à jour notre catalogue encore en construction. Il se peut également qu'aucune aide ne soit proposée pour le moment par nos partenaires publics.</p>
+    {% endif %}
   </div>
 
-  <div class="fr-container fr-p-0 fr-mb-6w">
-    <div class="fr-grid-row fr-grid-row--gutters">
-      <div class="fr-col fr-col-12">
-        <div class="fr-accordions-group">
-        {% for type_aide, aide_list in aides.items %}
-          <section class="fr-accordion">
-            <h3 class="fr-accordion__title">
-              <button type="button"
-                      class="fr-accordion__btn"
-                      aria-expanded="false"
-                      aria-controls="accordeon-type-{{ forloop.counter }}"
-              >
-                {{ type_aide.nom }}
-                <span class="fr-text--xs fr-text-mention--grey fr-text--regular fr-ml-2v fr-hidden fr-unhidden-sm">
-                  {{ type_aide.description }}
-                </span>
-                <p class="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon fr-ml-2v">
-                  {{ aide_list|length }} aide{{ aide_list|pluralize }} disponible{{ aide_list|pluralize }}
-                </p>
-              </button>
-            </h3>
-            <div id="accordeon-type-{{ forloop.counter }}" class="fr-collapse">
-              {% for aide in aide_list %}
-              <div class="fr-col fr-col-12 fr-mb-1w">
-                {% dsfr_card aide %}
+  <div class="fr-container fr-p-0">
+    <div class="fr-grid-row fr-grid-row--gutters fr-mb-5w">
+      {% if aides %}
+        <div class="fr-col fr-col-12">
+          <div class="fr-accordions-group">
+          {% for type_aide, aide_list in aides.items %}
+            <section class="fr-accordion">
+              <h3 class="fr-accordion__title">
+                <button type="button"
+                        class="fr-accordion__btn"
+                        aria-expanded="false"
+                        aria-controls="accordeon-type-{{ forloop.counter }}"
+                >
+                  {{ type_aide.nom }}
+                  <span class="fr-text--xs fr-text-mention--grey fr-text--regular fr-ml-2v fr-hidden fr-unhidden-sm">
+                    {{ type_aide.description }}
+                  </span>
+                  <p class="fr-badge fr-badge--sm fr-badge--info fr-badge--no-icon fr-ml-2v">
+                    {{ aide_list|length }} aide{{ aide_list|pluralize }} disponible{{ aide_list|pluralize }}
+                  </p>
+                </button>
+              </h3>
+              <div id="accordeon-type-{{ forloop.counter }}" class="fr-collapse">
+                {% for aide in aide_list %}
+                <div class="fr-col fr-col-12 fr-mb-1w">
+                  {% dsfr_card aide %}
+                </div>
+                {% endfor %}
               </div>
-              {% endfor %}
-            </div>
-          </section>
-        {% endfor %}
+            </section>
+          {% endfor %}
+          </div>
         </div>
-      </div>
+      {% else %}
+        <a class="fr-btn fr-mx-auto fr-mt-2w" href="{% url 'agri:home' %}{% querystring theme=None sujets=None next=request.path %}">Recommencer la recherche</a>
+      {% endif %}
     </div>
   </div>
 </div>
 {% endblock main_col %}
+
+{% block aftercontent %}
+  {% include "product/blocks/user_note.html" %}
+{% endblock aftercontent %}

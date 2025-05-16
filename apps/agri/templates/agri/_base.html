@@ -41,7 +41,7 @@
             </span>
           </div>
           <div class="fr-mb-3v">
-            <a class="fr-link fr-link--sm" href="{% url 'agri:step-2' %}{% querystring sujets=None siret=None commune=None date_installation=None regroupements=None nafs=None tranche_effectif_salarie=None %}">
+            <a class="fr-link fr-link--sm" href="{% url 'agri:step-2' %}{% querystring sujets=None next=request.path %}">
               Explorer d’autres sujets
             </a>
           </div>
@@ -91,7 +91,7 @@
           </div>
           {% endif %}
           <div>
-            <a class="fr-link fr-link--sm" href="{% url 'agri:step-3' %}{% querystring siret=None commune=None date_installation=None regroupements=None nafs=None tranche_effectif_salarie=None %}">
+            <a class="fr-link fr-link--sm" href="{% url 'agri:step-3' %}{% querystring siret=None commune=None date_installation=None regroupements=None filieres=None tranche_effectif_salarie=None %}">
               Modifier
             </a>
           </div>
@@ -111,9 +111,11 @@
     <div class="fr-col fr-col-12 fr-col-md-6">
       {% if stepper %}{% dsfr_stepper stepper heading_tag="div" %}{% endif %}
 
-      <h2 class="fr-h6">{% block h2 %}{% endblock %}</h2>
-      {% block main_col_content %}{% endblock %}
+      <h2 class="fr-h6">{% block h2 %}{% endblock h2 %}</h2>
+      {% block main_col_content %}{% endblock main_col_content %}
+      {% block main_col_footer %}{% endblock main_col_footer %}
     </div>
-    {% endblock %}
+    {% endblock main_col %}
   </div>
+  {% block aftercontent %}{% endblock aftercontent %}
 {% endblock content %}

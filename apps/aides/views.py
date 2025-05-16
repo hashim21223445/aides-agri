@@ -1,5 +1,7 @@
 from django.views.generic import DetailView
 
+from product.forms import UserNoteForm
+
 from .models import Aide
 
 
@@ -19,9 +21,19 @@ class AideDetailView(DetailView):
 
         context_data.update(
             {
+                "user_note_form": UserNoteForm(),
                 "breadcrumb_data": {
                     "links": breadcrumb_links,
                     "current": self.object.nom,
+                },
+                "badge_data": {
+                    "extra_classes": "fr-badge--green-emeraude",
+                    "label": "En cours",
+                }
+                if self.object.is_ongoing
+                else {
+                    "extra_classes": "fr-badge--pink-tuile",
+                    "label": "Clôturé",
                 },
             }
         )

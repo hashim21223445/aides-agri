@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.db import models
 from django.urls import reverse
 
@@ -58,18 +60,11 @@ class Sujet(GristModel):
         return self.nom
 
 
-class TypeQuerySet(models.QuerySet):
-    def get_conseil(self):
-        return self.get(nom="Conseil")
-
-
 class Type(GristModel):
     class Meta:
         verbose_name = "Type d'aides"
         verbose_name_plural = "Types d'aides"
         ordering = ("nom",)
-
-    objects = TypeQuerySet.as_manager()
 
     nom = models.CharField(blank=True)
     description = models.CharField(blank=True)
@@ -279,3 +274,7 @@ class Aide(GristModel):
 
     def get_absolute_url(self):
         return reverse("aides:aide", kwargs={"slug": self.slug, "pk": self.pk})
+
+    @property
+    def is_ongoing(self) -> bool:
+        return self.date_fin is None or self.date_fin > date.today()

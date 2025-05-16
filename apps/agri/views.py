@@ -4,64 +4,47 @@ from collections import defaultdict
 from django.db.models import Q
 from django.shortcuts import render
 from django.templatetags.static import static
-from django.utils.timezone import now
+from django.urls import reverse
 from django.views.generic import TemplateView, ListView, View
 from django.views.generic.base import ContextMixin
+from django.views.generic.edit import CreateView
 
 from aides.models import (
     Theme,
     Sujet,
     Aide,
     ZoneGeographique,
-    Type,
     GroupementProducteurs,
     Filiere,
 )
+from product.forms import UserNoteForm
 
 from . import siret
 from . import tasks
+from .forms import FeedbackForm
 
 
 class HomeView(TemplateView):
-    def get_template_names(self):
-        if self.request.htmx:
-            template_name = "agri/_partials/home_themes.html"
-        else:
-            template_name = "agri/home.html"
-        return [template_name]
-
-    extra_context = {
-        "themes": Theme.objects.with_aides_count().order_by("-urgence", "-aides_count"),
-        "conseillers_entreprises_card": {
-            "heading_tag": "h4",
-            "extra_classes": "fr-card--horizontal fr-border-default--red-marianne",
-            "title": "Conseillers Entreprises",
-            "description": "Le service public d’accompagnement des entreprises. Échangez avec les conseillers de proximité qui peuvent vous aider dans vos projets, vos difficultés ou les transformations nécessaires à la réussite de votre entreprise.",
-            "image_url": static(
-                "agri/images/home/illustration_conseillers_entreprise.svg"
-            ),
-            "media_badges": [
-                {
-                    "extra_classes": "fr-badge--green-emeraude",
-                    "label": "En cours",
-                }
-            ],
-        },
-    }
+    template_name = "agri/home.html"
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
+        themes_and_urls = []
 
-        if self.request.htmx and self.request.GET.get("more_themes", None):
-            # show more themes, partial template
-            context_data["themes"] = context_data["themes"][4:]
-        elif not self.request.htmx and not self.request.GET.get("more_themes", None):
-            # nominal case: show only 4 themes, full page
-            context_data["themes"] = context_data["themes"][:4]
-        else:
-            # show all themes, because more_themes was asked, but on a new page
-            pass
+        for theme in Theme.objects.with_aides_count().order_by(
+            "-urgence", "-aides_count"
+        ):
+            query = self.request.GET.dict()
+            query.update({"theme": theme.pk})
+            url = reverse("agri:step-2", query=query)
+            themes_and_urls.append((url, theme))
 
+        context_data.update(
+            {
+                "themes": themes_and_urls,
+                "feedback_themes_sujets_form": FeedbackForm,
+            }
+        )
         return context_data
 
 
@@ -115,6 +98,7 @@ class AgriMixin(ContextMixin):
                 "summary_filieres": self.filieres,
                 "summary_date_installation": self.date_installation,
                 "summary_commune": self.commune,
+                "code_effectif": self.code_effectif,
                 "summary_effectif": siret.mapping_effectif.get(self.code_effectif, None)
                 if self.code_effectif
                 else None,
@@ -148,7 +132,8 @@ class Step2View(AgriMixin, TemplateView):
                     for sujet in Sujet.objects.with_aides_count()
                     .filter(themes=self.theme)
                     .order_by("-aides_count")
-                }
+                },
+                "feedback_themes_sujets_form": FeedbackForm,
             }
         )
         return extra_context
@@ -168,7 +153,6 @@ class Step4View(AgriMixin, TemplateView):
         context_data.update(
             {
                 "etablissement": self.etablissement,
-                "categories_juridiques": siret.mapping_categories_juridiques,
                 "commune": ZoneGeographique.objects.communes()
                 .filter(numero=self.etablissement.get("commune"))
                 .first(),
@@ -189,9 +173,10 @@ class Step5View(AgriMixin, TemplateView):
         filiere = Filiere.objects.filter(code_naf=naf).first()
         context_data.update(
             {
-                "mapping_naf": siret.mapping_naf_complete_unique,
                 "mapping_tranches_effectif": siret.mapping_effectif,
-                "code_effectif": self.code_effectif,
+                "tranche_effectif_salarie": siret.mapping_effectif.get(
+                    self.etablissement.get("tranche_effectif_salarie", ""), None
+                ),
                 "etablissement": self.etablissement,
                 "groupements": [
                     (g.pk, g.nom, g.libelle)
@@ -221,7 +206,7 @@ class ResultsMixin(AgriMixin):
                 siret.mapping_effectif_complete[self.code_effectif]["max"],
             )
             .select_related("organisme")
-            .prefetch_related("zones_geographiques")
+            .prefetch_related("zones_geographiques", "types")
             .order_by("-date_fin")
         )
 
@@ -244,7 +229,7 @@ class ResultsView(ResultsMixin, ListView):
                     type_aide: [
                         {
                             "heading_tag": "h2",
-                            "extra_classes": "fr-card--horizontal-tier fr-card--no-icon",
+                            "extra_classes": "fr-card--horizontal fr-card--horizontal-fifth fr-card--no-icon",
                             "title": aide.nom,
                             "description": aide.promesse,
                             "link": aide.get_absolute_url(),
@@ -255,47 +240,29 @@ class ResultsView(ResultsMixin, ListView):
                                     "extra_classes": "fr-badge--green-emeraude",
                                     "label": "En cours",
                                 }
-                                if aide.date_fin is None or aide.date_fin > now().date()
+                                if aide.is_ongoing
                                 else {
                                     "extra_classes": "fr-badge--pink-tuile",
                                     "label": "Clôturé",
                                 }
                             ],
                             "top_detail": {
-                                "detail": {
-                                    "icon_class": "fr-icon-arrow-right-line",
-                                    "text": aide.organisme.nom,
-                                },
+                                "tags": [
+                                    {
+                                        "label": aide.couverture_geographique,
+                                        "extra_classes": "fr-tag--sm",
+                                    }
+                                ],
                             },
                         }
                         for aide in aides
                     ]
                     for type_aide, aides in aides_by_type.items()
                 },
+                "user_note_form": UserNoteForm(),
             }
         )
-        type_conseil = Type.objects.get_conseil()
-        if type_conseil not in context_data["aides"]:
-            context_data["aides"][type_conseil] = []
-        context_data["aides"][type_conseil].append(
-            {
-                "heading_tag": "h2",
-                "extra_classes": "fr-card--horizontal-tier fr-card--no-icon fr-border-default--red-marianne",
-                "title": "Conseillers Entreprises",
-                "description": "Le service public d’accompagnement des entreprises. Échangez avec les conseillers qui peuvent vous aider dans vos projets, vos difficultés ou les transformations nécessaires à la réussite de votre entreprise.",
-                "link": "#",
-                "image_url": static(
-                    "agri/images/home/illustration_conseillers_entreprise.svg"
-                ),
-                "ratio_class": "fr-ratio-1x1",
-                "media_badges": [
-                    {
-                        "extra_classes": "fr-badge--green-emeraude",
-                        "label": "En cours",
-                    }
-                ],
-            }
-        )
+
         return context_data
 
 
@@ -380,3 +347,12 @@ class SendResultsByMailView(ResultsMixin, View):
             aides_ids=[a.pk for a in self.get_results()],
         )
         return render(request, "agri/_partials/send-results-by-mail-ok.html")
+
+
+class CreateFeedbackView(CreateView):
+    form_class = FeedbackForm
+
+    def form_valid(self, form: FeedbackForm):
+        form.instance.sent_from_url = self.request.htmx.current_url
+        self.object = form.save()
+        return render(self.request, "agri/_partials/feedback_themes_sujets_ok.html")
