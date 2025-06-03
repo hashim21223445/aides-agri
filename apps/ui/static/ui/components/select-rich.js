@@ -10,7 +10,7 @@ export class SelectRich extends Controller {
     multi: Boolean,
     required: Boolean
   }
-  static targets = ["button", "entries", "search", "searchButton", "option", "helper", "error", "tags"]
+  static targets = ["button", "entries", "search", "searchButton", "option", "helper", "error", "tags", "addButton"]
 
   connect() {
     super.connect()
@@ -18,12 +18,12 @@ export class SelectRich extends Controller {
     // Close the select-rich element on click elsewhere or hit Esc
     document.body.addEventListener("click", evt => {
       if (!evt.target.closest("#" + this.element.id)) {
-        this.entriesTarget.classList.remove("fr-collapse--expanded")
+        this._close()
       }
     })
     document.body.addEventListener("keydown", evt => {
       if (evt.code === "Escape") {
-        this.entriesTarget.classList.remove("fr-collapse--expanded")
+        this._close()
       }
     })
 
@@ -39,23 +39,14 @@ export class SelectRich extends Controller {
       })
     }
 
-    // in case of external search, disable form submission when entries are opened
+    // in case of external search, collect submit buttons to disable in order to let [Enter] trigger search
     if (this.hasSearchButtonTarget) {
-      new MutationObserver((mutationList, observer) => {
-        for (const mutation of mutationList) {
-          if (mutation.type === "attributes" && mutation.attributeName === "class") {
-            const isOpened = mutation.target.classList.contains("fr-collapse--expanded")
-            const form = this.element.closest("form")
-            if (form) {
-              form.querySelectorAll("button[type=submit]").forEach(elt => {
-                if (elt !== this.searchButtonTarget) {
-                  elt.disabled = isOpened
-                }
-              })
-            }
-          }
-        }
-      }).observe(this.entriesTarget, { attributes: true });
+      const form = this.element.closest("form")
+      if (form) {
+        this.buttonsToDisable = form.querySelectorAll("button[type=submit]")
+      } else {
+        this.buttonsToDisable = []
+      }
     }
 
     // if tags are enabled, initialize them
@@ -65,13 +56,16 @@ export class SelectRich extends Controller {
           this._addTag(inputElt)
         }
       })
+      this._updateButtons()
     }
 
     this._updateButton()
   }
 
   focus() {
-    this.entriesTarget.classList.add("fr-collapse--expanded")
+    if (this.hasOptionTarget) {
+      this._open()
+    }
   }
 
   search() {
@@ -90,8 +84,27 @@ export class SelectRich extends Controller {
     })
   }
 
+  toggleExternalSearchFocus() {
+    this.buttonsToDisable.forEach(elt => {
+      if (elt !== this.searchButtonTarget) {
+        elt.disabled = !elt.disabled
+        if (elt.disabled) {
+          elt.setAttribute("type", "button")
+        } else {
+          elt.setAttribute("type", "submit")
+        }
+      }
+    })
+  }
+
   externalSearch(evt) {
     this._unsetErrorState()
+  }
+
+  optionTargetConnected() {
+    if (this.hasSearchButtonTarget) {
+      this.focus()
+    }
   }
 
   _updateButton() {
@@ -121,7 +134,7 @@ export class SelectRich extends Controller {
   _addTag(inputElement) {
     const tagNode = inputElement.nextElementSibling.nextElementSibling.cloneNode(true)
     tagNode.classList.remove("fr-hidden")
-    this.tagsTarget.appendChild(tagNode)
+    this.tagsTarget.insertBefore(tagNode, this.addButtonTarget)
   }
 
   _removeTag(inputElement) {
@@ -129,6 +142,45 @@ export class SelectRich extends Controller {
     if (tag) {
       tag.parentElement.removeChild(tag)
     }
+  }
+
+  _updateButtons() {
+    this._updateButton()
+    if (this.hasTagsTarget) {
+      if (this.tagsTarget.querySelector(".fr-tag")) {
+        this.buttonTarget.classList.add("fr-hidden")
+        this.addButtonTarget.classList.remove("fr-hidden")
+      } else {
+        this.addButtonTarget.classList.add("fr-hidden")
+        this._show()
+      }
+    }
+  }
+
+  _show() {
+    this.buttonTarget.classList.remove("fr-hidden")
+  }
+
+  show() {
+    this._show()
+    this._open()
+  }
+
+  _open() {
+    if (this.hasButtonTarget) {
+      this.buttonTarget.setAttribute("aria-expanded", true)
+    } else {
+      this.entriesTarget.classList.add("fr-collapse--expanded")
+    }
+  }
+
+  _close() {
+    if (this.hasButtonTarget) {
+      this.buttonTarget.setAttribute("aria-expanded", false)
+    } else {
+      this.entriesTarget.classList.remove("fr-collapse--expanded")
+    }
+    this._updateButtons()
   }
 
   changed(evt) {
@@ -146,7 +198,7 @@ export class SelectRich extends Controller {
         }
       }
     } else {
-      this.entriesTarget.classList.remove("fr-collapse--expanded")
+      this._close()
     }
     this.element.dispatchEvent(new Event("change"))
   }
