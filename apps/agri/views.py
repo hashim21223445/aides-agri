@@ -3,6 +3,7 @@ from collections import defaultdict
 from copy import copy
 
 from django.db.models import Q
+from django.http.response import Http404
 from django.shortcuts import render
 from django.templatetags.static import static
 from django.urls import reverse
@@ -32,8 +33,10 @@ class HomeView(TemplateView):
         context_data = super().get_context_data(**kwargs)
         themes_and_urls = []
 
-        for theme in Theme.objects.with_aides_count().order_by(
-            "-urgence", "-aides_count"
+        for theme in (
+            Theme.objects.published()
+            .with_aides_count()
+            .order_by("-urgence", "-aides_count")
         ):
             query = self.request.GET.dict()
             query.update({"theme": theme.pk})
@@ -195,7 +198,8 @@ class Step2View(AgriMixin, TemplateView):
                 "theme": self.theme,
                 "sujets": {
                     f"sujet-{sujet.pk}": sujet
-                    for sujet in Sujet.objects.with_aides_count()
+                    for sujet in Sujet.objects.published()
+                    .with_aides_count()
                     .filter(themes=self.theme)
                     .order_by("-aides_count")
                 },
@@ -235,6 +239,10 @@ class Step5View(AgriMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
+
+        if not self.etablissement:
+            raise Http404("Cette étape nécessite d’avoir sélectionné une exploitation.")
+
         naf = self.etablissement.get("activite_principale", "")
         if naf[-1].isalpha():
             naf = naf[:-1]
