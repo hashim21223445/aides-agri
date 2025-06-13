@@ -230,9 +230,9 @@ class GristIntegration:
         CONDITIONS = "condition_eligibilite"
         COUVERTURE_GEOGRAPHIQUE = "Couverture_Geographique"
         ZONE_GEOGRAPHIQUE = "zone_geographique"
-        FILIERES = "filieres"
-        MIN_EFFECTIF = "min_effectif"
-        MAX_EFFECTIF = "max_effectif"
+        FILIERES = "Eligibilite_activites"
+        MIN_EFFECTIF = "Eligibilite_effectif_minimum"
+        MAX_EFFECTIF = "Eligibilite_effectif_maximum"
         TYPE_DEPENSE = "type_depense"
         ETAPE_1 = "etape_1"
         ETAPE_2 = "etape_2"
@@ -327,3 +327,29 @@ class AbstractRawFields(enum.Enum):
     @property
     def name_full(self):
         return f"raw_{self.name}"
+
+
+def duplicate_aide_departements(id_solution: str):
+    cols_to_ignore = ["id"] + [
+        col["id"]
+        for col in gristapi.list_cols(AideLoader.table)[1]
+        if col["fields"]["isFormula"]
+    ]
+    departements = [
+        d["id"]
+        for d in gristapi.list_records(
+            ZoneGeographiqueLoader.table, filter={"Type": ["Département"]}
+        )[1]
+    ]
+
+    aide = gristapi.list_records(AideLoader.table, filter={"Id_solution": id_solution})[
+        1
+    ]
+    new_aides = []
+    for id_departement in departements:
+        new_aide = {k: v for k, v in aide.items() if k not in cols_to_ignore}
+        new_aide.update(
+            {"zone_geographique": ["L", id_departement], "parent": aide["id"]}
+        )
+        new_aides.append(new_aide)
+    gristapi.add_records(AideLoader.table, new_aides)
