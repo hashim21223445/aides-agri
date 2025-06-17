@@ -39,8 +39,23 @@ makemigrations: (manage "makemigrations")
     ruff format apps/*/migrations/*.py
 
 # Testing
+dump-fixtures:
+    uv run --no-sync manage.py dumpdata --natural-primary --natural-foreign aides.Theme aides.Sujet --output=conf/fixtures/aides_01_sujets.json
+    uv run --no-sync manage.py dumpdata --natural-primary --natural-foreign aides.Filiere aides.SousFiliere aides.Production aides.GroupementProducteurs --output=conf/fixtures/aides_02_filieres.json
+    uv run --no-sync manage.py dumpdata --natural-primary --natural-foreign aides.ZoneGeographique --pks=13,26,265,5754 --output=conf/fixtures/aides_03_zones_geographiques.json
+
 test:
     DJANGO_SETTINGS_MODULE=conf.settings.testing uv run pytest --cov
+
+runserver-for-e2e-tests:
+    uv run --no-sync manage.py collectstatic --noinput --settings conf.settings.testing
+    uv run --no-sync manage.py runserver --noreload --insecure --settings conf.settings.testing
+
+lighthouse:
+    npx lhci autorun
+
+cypress:
+    npx cypress run
 
 # Scalingo: SSH
 scalingo-django-ssh environment:
