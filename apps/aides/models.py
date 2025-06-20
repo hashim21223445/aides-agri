@@ -89,10 +89,15 @@ class Type(GristModel):
     class Meta:
         verbose_name = "Type d'aides"
         verbose_name_plural = "Types d'aides"
-        ordering = ("nom",)
+        ordering = (
+            "-urgence",
+            "nom",
+        )
 
     nom = models.CharField(blank=True)
     description = models.CharField(blank=True)
+    urgence = models.BooleanField(default=False)
+    icon_name = models.CharField(blank=True)
 
     def __str__(self):
         return self.nom
@@ -329,6 +334,7 @@ class Aide(GristModel):
         models.CharField(choices=EtatAvancementProjet), null=True
     )
     eligibilite_age = models.CharField(blank=True)
+    eligibilite_cumulable = models.CharField(blank=True)
     type_depense = models.CharField(blank=True)
     couverture_geographique = models.CharField(
         choices=CouvertureGeographique, default=CouvertureGeographique.NATIONAL
