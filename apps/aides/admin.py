@@ -313,6 +313,20 @@ class AideAdmin(ExtraButtonsMixin, ConcurrentModelAdmin, VersionAdmin):
             },
         ),
         (
+            "Cycle de vie",
+            {
+                "classes": ["collapse"],
+                "fields": [
+                    ("source", "integration_method"),
+                    ("priority", "date_target_publication"),
+                    ("date_created", "date_modified", "last_published_at"),
+                    ("status", "assigned_to", "cc_to"),
+                    "raison_desactivation",
+                    "internal_comments",
+                ],
+            },
+        ),
+        (
             "Présentation",
             {
                 "classes": ["collapse"],
@@ -375,20 +389,6 @@ class AideAdmin(ExtraButtonsMixin, ConcurrentModelAdmin, VersionAdmin):
         (
             "Données brutes",
             {"classes": ["collapse"], "fields": ["raw_data"]},
-        ),
-        (
-            "Cycle de vie",
-            {
-                "classes": ["collapse"],
-                "fields": [
-                    ("source", "integration_method"),
-                    ("priority", "date_target_publication"),
-                    ("date_created", "date_modified", "last_published_at"),
-                    ("status", "assigned_to", "cc_to"),
-                    "raison_desactivation",
-                    "internal_comments",
-                ],
-            },
         ),
     ]
     formfield_overrides = {
@@ -567,11 +567,11 @@ class AideAdmin(ExtraButtonsMixin, ConcurrentModelAdmin, VersionAdmin):
             {
                 "title": "Vue des aides en Kanban",
                 "aides_by_status": {
-                    status: Aide.objects.filter(status=status)
+                    status.label: Aide.objects.filter(status=status)
                     .select_related("organisme", "assigned_to")
                     .order_by("date_target_publication", "priority")
                     for status in Aide.Status
-                    if status not in (Aide.Status.ARCHIVED, Aide.Status.REJECTED)
+                    if status not in (Aide.Status.ARCHIVED,)
                 },
             }
         )
