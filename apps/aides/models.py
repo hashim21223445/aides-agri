@@ -60,6 +60,7 @@ class Organisme(models.Model):
     logo_filename = models.CharField(blank=True)
     url = models.URLField(blank=True, verbose_name="Lien")
     courriel = models.EmailField(blank=True, verbose_name="Adresse courriel")
+    is_masa = models.BooleanField(default=False, verbose_name="Made in MASA")
 
     def __str__(self):
         return self.acronyme or self.nom
@@ -98,6 +99,9 @@ class Theme(models.Model):
     description = models.TextField(blank=True, verbose_name="Description")
     urgence = models.BooleanField(default=False, verbose_name="Urgence")
     published = models.BooleanField(default=False, verbose_name="Publié")
+    is_prioritaire = models.BooleanField(
+        default=False, verbose_name="Thématique prioritaire"
+    )
 
     def __str__(self):
         return self.nom_court
@@ -143,6 +147,7 @@ class Type(models.Model):
     description = models.CharField(blank=True, verbose_name="Description")
     urgence = models.BooleanField(default=False, verbose_name="Urgence")
     icon_name = models.CharField(blank=True, verbose_name="(technique) Nom de l’icône")
+    score_priorite_aides = models.PositiveSmallIntegerField(default=1)
 
     def __str__(self):
         return f"{self.nom} ({self.description})"
@@ -416,6 +421,18 @@ class Aide(models.Model):
         REALISATION = "Mise en œuvre / Réalisation"
         USAGE = "Usage / Valorisation"
 
+    class Importance(models.IntegerChoices):
+        BRULANT = 10, "1. Brulante - national"
+        NATIONALE = 8, "2. Nationale"
+        REGIONALE = 6, "3. Régionale"
+        LOCALE = 4, "4. Locale"
+        BASE = 0, "5. RAS, c'est calme"
+
+    class Urgence(models.IntegerChoices):
+        HIGH = 10, "1. Très urgent ou dure longtemps"
+        MEDIUM = 5, "2. Moyen urgent, ou dure quelques mois"
+        LOW = 2, "3. Pas urgent ou dure que quelques semaines"
+
     is_derivable = models.BooleanField(default=False, verbose_name="Est déclinable")
     parent = models.ForeignKey(
         "self",
@@ -478,6 +495,32 @@ class Aide(models.Model):
     )
     url_demarche = models.URLField(
         blank=True, max_length=2000, verbose_name="Lien vers la démarche"
+    )
+    importance = models.PositiveSmallIntegerField(
+        choices=Importance,
+        default=Importance.BASE,
+        verbose_name="Répond à une actualité brûlante",
+    )
+    urgence = models.PositiveSmallIntegerField(
+        choices=Urgence,
+        default=Urgence.LOW,
+        verbose_name="Degré d’urgence ou durée du dispositif",
+    )
+    enveloppe_globale = models.PositiveBigIntegerField(
+        null=True, blank=True, verbose_name="Enveloppe globale allouée"
+    )
+    demande_du_pourvoyeur = models.BooleanField(
+        default=False,
+        verbose_name="Demande de publication directement par le pourvoyeur d’aide",
+    )
+    taille_cible_potentielle = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Nombre d'agriculteurs potentiellement touchés",
+    )
+    is_meconnue = models.BooleanField(default=False, verbose_name="Aide méconnue")
+    is_filiere_sous_representee = models.BooleanField(
+        default=False, verbose_name="Filière sous-représentée"
     )
     contact = models.TextField(blank=True, verbose_name="Contacts")
     sujets = models.ManyToManyField(
@@ -601,11 +644,40 @@ class Aide(models.Model):
     def is_to_be_derived(self):
         return self.status == Aide.Status.TO_BE_DERIVED
 
+    def compute_priority(self):
+        priority = 0
+        priority += self.importance * 20
+        priority += self.urgence * 3
+        if self.enveloppe_globale:
+            priority += self.enveloppe_globale / 1_000_000 * 8
+        if self.organisme and self.organisme.is_masa:
+            priority += 10 * 6
+        if self.demande_du_pourvoyeur:
+            priority += 10 * 5
+        if self.taille_cible_potentielle:
+            priority += (self.taille_cible_potentielle * 0.0005 + 10) * 3
+        if self.pk:  # required for M2M relationships
+            if self.types.exists():
+                priority += (
+                    max(self.types.values_list("score_priorite_aides", flat=True)) * 4
+                )
+            for sujet in self.sujets.all():
+                for theme in sujet.themes.all():
+                    if theme.is_prioritaire:
+                        priority += 10 * 4
+        if self.is_meconnue:
+            priority += 10
+        if self.is_filiere_sous_representee:
+            priority += 10
+
+        self.priority = priority
+
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = f"{slugify(self.organisme.nom) if self.organisme_id else 'organisme-inconnu'}-{slugify(self.nom)}"
         if self.is_published:
             self.last_published_at = now()
+        self.compute_priority()
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
