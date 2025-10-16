@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "product",
     "agri",
     "aides",
+    "aides_feedback",
     "pac",
     "conf.apps.AidesAgriAdminConfig",
 ]
@@ -151,6 +152,7 @@ USE_TZ = True
 # Sites framework
 
 SITE_ID = 1
+HTTP_SCHEME = "https://"
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
